@@ -16,7 +16,7 @@ This project is a versatile tool for generating customizable millimeter grid pap
 
 1. Clone this repository:
    ```
-   git clone https://github.com/yourusername/mm_paper.git
+   git clone https://github.com/kavierim/mm_paper.git
    cd mm_paper
    ```
 
@@ -84,7 +84,7 @@ You can also use this Millimeter Paper Generator via web page: https://kavierim.
 
 MIT License
 
-Copyright (c) 2023 Your Name
+Copyright (c) 2025 Kari Vierimaa
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
