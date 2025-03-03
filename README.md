@@ -58,6 +58,10 @@ Open `index.html` in your web browser to use the interactive web interface:
 2. Click "Generate Grid" to preview the millimeter paper
 3. Use "Download as PDF" or "Download as PNG" buttons to save your design
 
+You can also use this Millimeter Paper Generator via web page: https://kavierim.github.io/mm_paper/
+
+![Example Web Page View](example_web_page_view.png)
+
 ## Examples
 
 - Standard blue millimeter paper (A4):
