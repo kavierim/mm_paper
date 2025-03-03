@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Millimeter Paper Generator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 20px;
+            padding: 15px;
+            background-color: #f5f5f5;
+            border-radius: 5px;
+        }
+        .control-group {
+            margin-bottom: 10px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        canvas {
+            border: 1px solid #ccc;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            max-width: 100%;
+        }
+        .actions {
+            margin-top: 20px;
+        }
+        button {
+            padding: 10px 15px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <h1>Millimeter Paper Generator</h1>
+    
+    <div class="controls">
+        <div class="control-group">
+            <label for="format">Paper Format:</label>
+            <select id="format">
+                <option value="A4">A4</option>
+                <option value="A3">A3</option>
+            </select>
+        </div>
+        
+        <div class="control-group">
+            <label for="orientation">Orientation:</label>
+            <select id="orientation">
+                <option value="portrait">Portrait</option>
+                <option value="landscape">Landscape</option>
+            </select>
+        </div>
+        
+        <div class="control-group">
+            <label for="mainColor">Main Grid Color:</label>
+            <input type="color" id="mainColor" value="#0000FF">
+        </div>
+        
+        <div class="control-group">
+            <label for="minorColor">Minor Grid Color:</label>
+            <input type="color" id="minorColor" value="#C8C8FF">
+        </div>
+        
+        <div class="control-group">
+            <label for="mainThickness">Main Line Thickness (mm):</label>
+            <input type="number" id="mainThickness" min="0.1" max="5" step="0.1" value="1">
+        </div>
+        
+        <div class="control-group">
+            <label for="minorThickness">Minor Line Thickness (mm):</label>
+            <input type="number" id="minorThickness" min="0.1" max="3" step="0.1" value="0.5">
+        </div>
+        
+        <div class="control-group">
+            <label for="margin">Margin (mm):</label>
+            <input type="number" id="margin" min="0" max="50" value="10">
+        </div>
+        
+        <div class="control-group">
+            <button id="generateButton">Generate Grid</button>
+        </div>
+    </div>
+    
+    <div class="preview">
+        <canvas id="paperCanvas"></canvas>
+    </div>
+    
+    <div class="actions">
+        <button id="downloadPdf">Download as PDF</button>
+        <button id="downloadPng">Download as PNG</button>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script>
+        // Paper formats in mm
+        const paperFormats = {
+            'A3': { width: 297, height: 420 },
+            'A4': { width: 210, height: 297 }
+        };
+        
+        // DOM elements
+        const canvas = document.getElementById('paperCanvas');
+        const ctx = canvas.getContext('2d');
+        const generateButton = document.getElementById('generateButton');
+        const downloadPdfButton = document.getElementById('downloadPdf');
+        const downloadPngButton = document.getElementById('downloadPng');
+        
+        // Generate millimeter paper
+        function generatePaper() {
+            // Get form values
+            const format = document.getElementById('format').value;
+            const orientation = document.getElementById('orientation').value;
+            const mainColor = document.getElementById('mainColor').value;
+            const minorColor = document.getElementById('minorColor').value;
+            const mainThickness = parseFloat(document.getElementById('mainThickness').value);
+            const minorThickness = parseFloat(document.getElementById('minorThickness').value);
+            const margin = parseInt(document.getElementById('margin').value);
+            
+            // Get paper dimensions
+            let width = paperFormats[format].width;
+            let height = paperFormats[format].height;
+            
+            // Apply orientation
+            if (orientation === 'landscape') {
+                [width, height] = [height, width];
+            }
+            
+            // Use higher resolution for better line thickness control
+            const scaleFactor = 10;  // Higher value for better quality and thickness control
+            const mmToPx = scaleFactor;
+            
+            // Set canvas dimensions
+            canvas.width = width * mmToPx;
+            canvas.height = height * mmToPx;
+            
+            // Set display dimensions
+            canvas.style.width = `${width}mm`;
+            canvas.style.height = `${height}mm`;
+            
+            // Calculate margin in pixels
+            const marginPx = margin * mmToPx;
+            
+            // Calculate grid area
+            const gridStartX = marginPx;
+            const gridEndX = canvas.width - marginPx;
+            const gridStartY = marginPx;
+            const gridEndY = canvas.height - marginPx;
+            
+            // Calculate grid dimensions
+            const gridWidth = width - (2 * margin);
+            const gridHeight = height - (2 * margin);
+            
+            // Clear canvas and set white background
+            ctx.fillStyle = 'white';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Precise line drawing function
+            function drawGridLines(spacing, color, thickness) {
+                ctx.strokeStyle = color;
+                ctx.lineWidth = thickness * mmToPx; // Scale thickness to match our pixel density
+                
+                // Draw vertical lines
+                for (let i = 0; i <= gridWidth; i += spacing) {
+                    const x = gridStartX + (i * mmToPx) + 0.5; // 0.5 for crisp lines
+                    ctx.beginPath();
+                    ctx.moveTo(x, gridStartY);
+                    ctx.lineTo(x, gridEndY);
+                    ctx.stroke();
+                }
+                
+                // Draw horizontal lines
+                for (let i = 0; i <= gridHeight; i += spacing) {
+                    const y = gridStartY + (i * mmToPx) + 0.5; // 0.5 for crisp lines
+                    ctx.beginPath();
+                    ctx.moveTo(gridStartX, y);
+                    ctx.lineTo(gridEndX, y);
+                    ctx.stroke();
+                }
+            }
+            
+            // First draw minor grid (1mm)
+            drawGridLines(1, minorColor, minorThickness);
+            
+            // Then draw main grid (10mm)
+            drawGridLines(10, mainColor, mainThickness);
+        }
+        
+        // Download functions
+        function downloadPDF() {
+            const { jsPDF } = window.jspdf;
+            
+            // Get form values for calculating sizes
+            const format = document.getElementById('format').value;
+            const orientation = document.getElementById('orientation').value;
+            
+            // Create PDF with correct dimensions
+            const pdf = new jsPDF({
+                orientation: orientation,
+                unit: 'mm',
+                format: format
+            });
+            
+            // Add high-resolution image to PDF
+            const imgData = canvas.toDataURL('image/png', 1.0);
+            const pdfWidth = pdf.internal.pageSize.getWidth();
+            const pdfHeight = pdf.internal.pageSize.getHeight();
+            
+            pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+            
+            // Download PDF
+            pdf.save('millimeter_paper.pdf');
+        }
+        
+        function downloadPNG() {
+            // Create high-quality PNG
+            const link = document.createElement('a');
+            link.download = 'millimeter_paper.png';
+            link.href = canvas.toDataURL('image/png', 1.0);
+            link.click();
+        }
+        
+        // Event listeners
+        generateButton.addEventListener('click', generatePaper);
+        downloadPdfButton.addEventListener('click', downloadPDF);
+        downloadPngButton.addEventListener('click', downloadPNG);
+        
+        // Generate default grid on page load
+        window.onload = generatePaper;
+    </script>
+</body>
+</html>
